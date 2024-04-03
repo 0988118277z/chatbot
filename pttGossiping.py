@@ -1,4 +1,4 @@
-import requests, re, math
+import requests, re, math, os
 from bs4 import BeautifulSoup
 from datetime import datetime
 import sqlite3, pymongo
@@ -34,7 +34,7 @@ class PptGossiping():
                      (id INTEGER PRIMARY KEY, title TEXT, url TEXT UNIQUE)''')
         conn.close()
 
-        print('done', file=self.logfile, flush=True)
+        # print('done', file=self.logfile, flush=True)
         return urls
         
     def update_url(self):  #更新DB內的八卦站頁數
@@ -125,9 +125,11 @@ class PptGossiping():
             'message': [{'user':user.text, 'content':message.text[1:]} for user,message in zip (message_users,message_contents)]
             }]
         # print(data)
-        print('ready to insert')
+        print('ready to connect mongo')
         mongo_dbs = pymongo.MongoClient(f"mongodb://{user}:{passwd}@{host}:{port}/{db}")
         mydb = mongo_dbs["pttdata"]
         mycol = mydb["messages"]
+        print('ready to insert')
         data = mycol.insert_many(data)
+        mongo_dbs.close()
         print(f'done:{url}')
