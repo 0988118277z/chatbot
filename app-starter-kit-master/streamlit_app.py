@@ -6,6 +6,7 @@ import pymongo, json, os, jieba
 from sklearn.feature_extraction.text import TfidfVectorizer
 from sklearn.metrics.pairwise import cosine_similarity
 from sklearn.cluster import DBSCAN
+from itertools import islice
 
 api_key = os.getenv('openai_api_key')
 user = os.getenv('mongodb_user')
@@ -16,7 +17,17 @@ db = os.getenv('mongodb_db')
 
 # App title
 st.set_page_config(page_title="🤗💬 HugChat")
-   
+
+st.markdown(
+    r"""
+    <style>
+    .stDeployButton {
+            visibility: hidden;
+        }
+    </style>
+    """, unsafe_allow_html=True
+)
+
 # Store LLM generated responses
 if "messages" not in st.session_state.keys():
     st.session_state.messages = [{"role": "assistant", "content": "八卦機器人，有什麼八卦想要了解"}]
@@ -105,18 +116,20 @@ def generate_response(prompt_txt):
         
         return_keyword = '由於八卦類型過多，選擇一個你想要知道的內容\n'
         # print(f'選擇一個你想要知道的內容')
+        if len(clustered_data) > 100:  #避免顯示結果太多
+            start_index = max(0, len(clustered_data) - 100)
+            clustered_data = dict(islice(clustered_data.items(), start_index, None))
         for keys, values in clustered_data.items():
             try:
-                return_keyword += f"{keys}:{values[0].split(']')[1]}"
+                return_keyword += f"{int(keys) + 1}:{values[0].split(']')[1]}"
                 # print(keys,':',values[0].split(']')[1])
             except:
-                return_keyword += f"{keys}:{values[0]}"
+                return_keyword += f"{int(keys) + 1}:{values[0]}"
                 # print(keys,':',values[0])
-            return_keyword += '\n'
+            return_keyword += '  \n'  #多行用換行顯示
         return return_keyword
         
-    #過濾空白的留言    
-    message_list = []
+    message_list = [] #過濾空白的留言 
     for key, values in mongo_data_list.items():
         for i in values:
             if preprocess_text_chinese(i) != ' ' and i != '':
@@ -155,7 +168,7 @@ if prompt := st.chat_input():
 if st.session_state.messages[-1]["role"] != "assistant":
     with st.chat_message("assistant"):
         with st.spinner("Thinking..."):
-            response = generate_response(prompt)             
-            st.text(response) 
+            response = generate_response(prompt)
+            st.write(response) 
     message = {"role": "assistant", "content": response}
     st.session_state.messages.append(message)
