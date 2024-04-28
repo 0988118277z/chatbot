@@ -1,5 +1,6 @@
 *.db
 tt.py
+template.py
 # Byte-compiled / optimized / DLL files
 __pycache__/
 *.py[cod]
