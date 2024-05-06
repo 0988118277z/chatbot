@@ -21,16 +21,16 @@ st.set_page_config(page_title="🤗💬 HugChat")
 st.markdown(
     r"""
     <style>
-    .stDeployButton {
-            visibility: hidden;
-        }
+    .stDeployButton {visibility: hidden;}
+    p {color: red;}
     </style>
     """, unsafe_allow_html=True
 )
 
 # Store LLM generated responses
 if "messages" not in st.session_state.keys():
-    st.session_state.messages = [{"role": "assistant", "content": "八卦機器人，有什麼八卦想要了解"}]
+    st.session_state.messages = [{"role": "assistant", 
+        "content": "我是八卦機器人，告訴我你想知道的八卦主題，我可以告訴你其他人討論的八卦內容，範例：我想知道富士山的八卦"}]
 
 # Display chat messages
 for message in st.session_state.messages:
@@ -71,7 +71,7 @@ def generate_response(prompt_txt):
         """)
     chain = LLMChain(llm=llm, prompt=prompt_template)
     result = chain.run(user_input=prompt_txt)
-    # print(result)
+
     try:
         mongo_query = result.split('輸出:')[1].replace(' ','')
     except:
@@ -83,8 +83,6 @@ def generate_response(prompt_txt):
 
     query = json.loads(query_str)
     projection = json.loads(projection_str)
-    print('***' + str(query) + '***')
-    print('***' + str(projection) + '***')
     
     query_result = mycollection.find(query,projection)
     mongo_data = [ i for i in query_result]
@@ -114,7 +112,7 @@ def generate_response(prompt_txt):
                 clustered_data[label] = []
             clustered_data[label].append(list(mongo_data_list.keys())[i])      
         
-        return_keyword = '由於八卦類型過多，選擇一個你想要知道的內容\n'
+        return_keyword = '由於類型過多，請從選擇一個你想要知道的內容\n'
         # print(f'選擇一個你想要知道的內容')
         if len(clustered_data) > 100:  #避免顯示結果太多
             start_index = max(0, len(clustered_data) - 100)
@@ -143,7 +141,7 @@ def generate_response(prompt_txt):
         cosine_sim = cosine_similarity(tfidf_matrix)
         unique_message = []
         for i in range(len(message_list)):
-            if all(cosine_sim[i, j] < 0.5 for j in range(len(message_list)) if i != j):  #相關的留言不要
+            if all(cosine_sim[i, j] < 0.5 for j in range(len(message_list)) if i != j):    #相關的留言不要
                 unique_message.append(message_list[i].replace(' ',''))
     else:
         unique_message = None
